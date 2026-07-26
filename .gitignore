@@ -1,0 +1,13 @@
+# Bundled ffmpeg binaries (platform-specific, large — install locally instead)
+/ffmpeg
+/ffmpeg.exe
+/ffprobe
+/ffprobe.exe
+/bin/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/

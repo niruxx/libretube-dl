@@ -1,0 +1,4 @@
+from libretube_dl.app import main
+
+if __name__ == "__main__":
+    main()

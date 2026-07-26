@@ -23,22 +23,24 @@ from .downloader import (
 )
 
 ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("green")
+ctk.set_default_color_theme("blue")
 
-ACCENT = "#22c55e"
-ACCENT_HOVER = "#16a34a"
-MUTED = "#8b8f98"
+ACCENT = "#a855f7"
+ACCENT_HOVER = "#9333ea"
+TEXT = "#ffffff"
+MUTED = "#e3e1e8"
 WARNING = "#e5a54b"
 DANGER = "#e5484d"
-SURFACE = "#1c1e22"
-TITLEBAR = "#191b1f"
-BUTTON_HOVER = "#2a2d33"
-BACKGROUND = "#121316"
+SURFACE = "#151019"
+TITLEBAR = "#0b0810"
+BUTTON_HOVER = "#261b33"
+BACKGROUND = "#050308"
 
 THUMB_SIZE = (560, 315)
-CONTENT_WIDTH = 560
+THUMB_MAX_HEIGHT = 300
+CONTENT_WIDTH = 640
 TITLEBAR_HEIGHT = 42
-WINDOW_SIZE = (680, 780)
+WINDOW_SIZE = (760, 800)
 
 FADE_STEP = 0.09
 FADE_INTERVAL_MS = 12
@@ -89,7 +91,6 @@ class App(ctk.CTk):
         self.resizable(False, False)
         self.configure(fg_color=BACKGROUND)
         self._center_window(*WINDOW_SIZE)
-        self._fix_windows_taskbar_icon()
 
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         # Restoring from the taskbar can silently drop overrideredirect on Windows; reassert it.
@@ -116,16 +117,40 @@ class App(ctk.CTk):
                 warning=True,
             )
 
+        self._fix_windows_taskbar_icon()
+
+        # Bring to the foreground: lift above whatever launched it, briefly force-topmost
+        # in case the OS doesn't hand focus to a freshly-created window, then let go.
+        self.lift()
+        self.focus_force()
+        try:
+            self.attributes("-topmost", True)
+            self.after(200, lambda: self.attributes("-topmost", False))
+        except Exception:
+            pass
+
         self.after(30, self._fade_in)
 
     # ------------------------------------------------------------- window chrome
     def _center_window(self, width: int, height: int) -> None:
-        x = (self.winfo_screenwidth() - width) // 2
-        y = (self.winfo_screenheight() - height) // 2
+        # customtkinter scales width/height (but not position) for DPI, so the geometry
+        # string's requested size and the window's real on-screen size can differ (e.g. at
+        # 200% Windows scaling, "680x720" renders as 1360x1440 physical pixels). Realize the
+        # window first so winfo_width/height reflect the actual size, then center against that.
+        self.geometry(f"{width}x{height}")
+        self.update()
+        actual_w = self.winfo_width()
+        actual_h = self.winfo_height()
+        x = max(0, (self.winfo_screenwidth() - actual_w) // 2)
+        y = max(0, (self.winfo_screenheight() - actual_h) // 2)
         self.geometry(f"{width}x{height}+{x}+{y}")
 
     def _fix_windows_taskbar_icon(self) -> None:
-        """Overridden-decoration windows lose their taskbar entry on Windows; restore it."""
+        """Overridden-decoration windows lose their taskbar entry on Windows; restore it.
+
+        Uses SetWindowPos(SWP_FRAMECHANGED) to refresh the window's registration instead of
+        withdraw()/deiconify(), which can silently reset the position we just centered it at.
+        """
         if sys.platform != "win32":
             return
         try:
@@ -134,12 +159,18 @@ class App(ctk.CTk):
             gwl_exstyle = -20
             ws_ex_appwindow = 0x00040000
             ws_ex_toolwindow = 0x00000080
+            swp_nomove = 0x0002
+            swp_nosize = 0x0001
+            swp_nozorder = 0x0004
+            swp_framechanged = 0x0020
+
             hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
             style = ctypes.windll.user32.GetWindowLongW(hwnd, gwl_exstyle)
             style = (style & ~ws_ex_toolwindow) | ws_ex_appwindow
             ctypes.windll.user32.SetWindowLongW(hwnd, gwl_exstyle, style)
-            self.withdraw()
-            self.after(10, self.deiconify)
+            ctypes.windll.user32.SetWindowPos(
+                hwnd, 0, 0, 0, 0, 0, swp_nomove | swp_nosize | swp_nozorder | swp_framechanged
+            )
         except Exception:
             pass
 
@@ -192,7 +223,7 @@ class App(ctk.CTk):
             height=24,
             corner_radius=7,
             fg_color=ACCENT,
-            text_color="#0b1210",
+            text_color=TEXT,
             font=ctk.CTkFont(size=12, weight="bold"),
         )
         logo.grid(row=0, column=0, padx=(14, 8), pady=9)
@@ -200,7 +231,7 @@ class App(ctk.CTk):
         name = ctk.CTkLabel(
             bar,
             text="LibreTube Downloader",
-            text_color="#d7d9dd",
+            text_color=TEXT,
             font=ctk.CTkFont(size=12, weight="bold"),
             anchor="w",
         )
@@ -214,7 +245,7 @@ class App(ctk.CTk):
             corner_radius=0,
             fg_color="transparent",
             hover_color=BUTTON_HOVER,
-            text_color="#c7cad0",
+            text_color=TEXT,
             font=ctk.CTkFont(size=12),
             command=self._on_minimize,
         )
@@ -228,7 +259,7 @@ class App(ctk.CTk):
             corner_radius=0,
             fg_color="transparent",
             hover_color=DANGER,
-            text_color="#c7cad0",
+            text_color=TEXT,
             font=ctk.CTkFont(size=12),
             command=self._on_close,
         )
@@ -239,9 +270,16 @@ class App(ctk.CTk):
             widget.bind("<B1-Motion>", self._do_drag)
 
     def _build_layout(self) -> None:
-        content = ctk.CTkFrame(self, fg_color="transparent", width=CONTENT_WIDTH)
-        content.grid(row=1, column=0, sticky="n", pady=(28, 24))
-        content.grid_columnconfigure(0, weight=1, minsize=CONTENT_WIDTH)
+        content = ctk.CTkScrollableFrame(
+            self,
+            fg_color="transparent",
+            scrollbar_button_color=SURFACE,
+            scrollbar_button_hover_color=BUTTON_HOVER,
+            width=CONTENT_WIDTH,
+        )
+        content.grid(row=1, column=0, sticky="nsew", padx=(24, 8), pady=(16, 12))
+        content.grid_columnconfigure(0, weight=1, minsize=CONTENT_WIDTH - 40)
+        self._content = content
 
         # ---- URL bar (pill-shaped, button embedded on the right)
         url_bar = ctk.CTkFrame(content, fg_color=SURFACE, corner_radius=22, height=48)
@@ -254,6 +292,7 @@ class App(ctk.CTk):
             placeholder_text="Paste a video URL...",
             border_width=0,
             fg_color="transparent",
+            text_color=TEXT,
             font=ctk.CTkFont(size=13),
         )
         self.url_entry.grid(row=0, column=0, sticky="ew", padx=(16, 4), pady=4)
@@ -267,7 +306,8 @@ class App(ctk.CTk):
             corner_radius=19,
             fg_color=ACCENT,
             hover_color=ACCENT_HOVER,
-            text_color="#0b1210",
+            text_color=TEXT,
+            text_color_disabled=MUTED,
             font=ctk.CTkFont(size=13, weight="bold"),
             command=self._on_fetch,
         )
@@ -291,6 +331,7 @@ class App(ctk.CTk):
         self.title_label = ctk.CTkLabel(
             self.preview_card,
             text="",
+            text_color=TEXT,
             font=ctk.CTkFont(size=15, weight="bold"),
             anchor="w",
             justify="left",
@@ -315,7 +356,7 @@ class App(ctk.CTk):
             selected_color=ACCENT,
             selected_hover_color=ACCENT_HOVER,
             unselected_color=SURFACE,
-            text_color="#e6e8eb",
+            text_color=TEXT,
             font=ctk.CTkFont(size=12),
         )
         self.quality_picker.set("Best available")
@@ -331,7 +372,7 @@ class App(ctk.CTk):
         folder_row.grid_columnconfigure(0, weight=1)
 
         self.folder_label = ctk.CTkLabel(
-            folder_row, text=self.output_dir, text_color="#c7cad0", anchor="w", font=ctk.CTkFont(size=12)
+            folder_row, text=self.output_dir, text_color=TEXT, anchor="w", font=ctk.CTkFont(size=12)
         )
         self.folder_label.grid(row=0, column=0, sticky="ew")
 
@@ -344,7 +385,7 @@ class App(ctk.CTk):
             fg_color="transparent",
             border_width=1,
             border_color=MUTED,
-            text_color="#c7cad0",
+            text_color=TEXT,
             font=ctk.CTkFont(size=11),
             command=self._on_browse,
         ).grid(row=0, column=1, padx=(8, 0))
@@ -357,7 +398,8 @@ class App(ctk.CTk):
             corner_radius=23,
             fg_color=ACCENT,
             hover_color=ACCENT_HOVER,
-            text_color="#0b1210",
+            text_color=TEXT,
+            text_color_disabled=MUTED,
             font=ctk.CTkFont(size=14, weight="bold"),
             state="disabled",
             command=self._on_download,
@@ -389,6 +431,7 @@ class App(ctk.CTk):
             fg_color="transparent",
             hover_color=SURFACE,
             text_color=WARNING,
+            text_color_disabled=MUTED,
             font=ctk.CTkFont(size=11),
             state="disabled",
             command=self._on_cancel,
@@ -398,6 +441,13 @@ class App(ctk.CTk):
     # ---------------------------------------------------------------- helpers
     def _set_status(self, text: str, warning: bool = False) -> None:
         self.status_label.configure(text=text, text_color=WARNING if warning else MUTED)
+
+    def _scroll_content_to(self, fraction: float) -> None:
+        """Scroll the content area (e.g. to reveal the progress bar once a download starts)."""
+        try:
+            self._content._parent_canvas.yview_moveto(fraction)
+        except Exception:
+            pass
 
     def _set_busy(self, busy: bool) -> None:
         state = "disabled" if busy else "normal"
@@ -470,6 +520,7 @@ class App(ctk.CTk):
         self.meta_label.configure(text=f"{info.uploader} · {_human_duration(info.duration)}")
         self._set_status("Ready to download.")
         self.download_btn.configure(state="normal")
+        self._scroll_content_to(0.0)
         if info.thumbnail_url:
             threading.Thread(target=self._load_thumbnail, args=(info.thumbnail_url,), daemon=True).start()
 
@@ -478,9 +529,10 @@ class App(ctk.CTk):
             resp = requests.get(thumb_url, timeout=10)
             resp.raise_for_status()
             image = Image.open(io.BytesIO(resp.content)).convert("RGB")
-            width = CONTENT_WIDTH - 28
-            height = int(width * image.height / image.width)
-            image = image.resize((width, height), Image.LANCZOS)
+            # Fit within a bounding box (never exceeding either dimension) so unusually
+            # tall/square thumbnails can't push content past the fixed window height.
+            max_size = (CONTENT_WIDTH - 28, THUMB_MAX_HEIGHT)
+            image.thumbnail(max_size, Image.LANCZOS)
         except Exception:
             return
         self._run_on_ui(lambda: self._show_thumbnail(image))
@@ -495,6 +547,7 @@ class App(ctk.CTk):
         self._set_busy(True)
         self.progress_bar.set(0)
         self._set_status("Starting download...")
+        self._scroll_content_to(1.0)
         quality = self.quality_picker.get()
         url = self.current_info.webpage_url
         threading.Thread(

@@ -4,11 +4,12 @@
 
 A clean, modern desktop video downloader. Paste a URL, preview the video, pick a quality, and download.
 
-Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), so it works with YouTube and hundreds of other sites.
+Built with [Tauri](https://tauri.app/), TypeScript, and Tailwind CSS v2 — powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), so it works with YouTube and hundreds of other sites.
 
-![Python](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white)
-![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-22c55e)
-![UI](https://img.shields.io/badge/UI-customtkinter-1c1e22)
+![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-v2-38BDF8?logo=tailwindcss&logoColor=white)
+![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-a855f7)
 
 <img src="screenshots/preview.png" width="620" alt="LibreTube Downloader showing a fetched video ready to download">
 
@@ -38,70 +39,97 @@ Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), so it works with YouTube 
 - Paste a URL and fetch title, uploader, duration, and thumbnail before downloading
 - Quality presets: Best available, 1080p, 720p, 480p, or Audio only (MP3)
 - Custom download folder picker
-- Live progress bar with speed and ETA, and a cancel button mid-download
-- Frameless window with a custom titlebar — drag anywhere on it to move, minimize/close on the right
-- Smooth fade in on launch, fade out on close
-- Scrollable content area, so the fixed-size window stays comfortable on small screens
-- Dark, rounded, modern UI ([customtkinter](https://github.com/TomSchimansky/CustomTkinter))
+- Live progress with speed and ETA, and a cancel button mid-download
+- Frameless window with a custom titlebar and a smooth fade in on launch / fade out on close
+- Cross-platform: Windows, macOS, Linux
+- yt-dlp and ffmpeg ship bundled in the installer — nothing to install separately
+- A live dependency-status dot in the titlebar (green/yellow/red) with one-click install if something's missing — see [Dependency status & auto-install](#dependency-status--auto-install)
 
-## Compatibility
+## Tech stack
 
-| | Windows | macOS | Linux |
-|---|---|---|---|
-| Runs | Yes | Yes | Yes |
-| Extra setup | — | — | `python3-tk` system package ([see below](#1-python-dependencies)) |
-| Taskbar entry while frameless | Restored automatically | OS default | OS/WM-dependent |
+| Layer | Technology | Role |
+|---|---|---|
+| Desktop shell | [Tauri 2](https://tauri.app/) | Rust-based native shell that renders the UI in the OS's built-in webview (WebView2/WKWebView/WebKitGTK) instead of bundling Chromium — the app stays around ~15MB before the bundled yt-dlp/ffmpeg, versus Electron-style alternatives |
+| Frontend logic | [TypeScript](https://www.typescriptlang.org/) | `src/main.ts` — no framework; direct DOM updates, Tauri IPC calls, and the fetch/download flow |
+| Styling | [Tailwind CSS v2](https://v2.tailwindcss.com/) | Utility-first CSS (see [Notes on the Tailwind v2 setup](#notes-on-the-tailwind-v2-setup) for why v2 specifically, and what that required) |
+| Bundler / dev server | [Vite](https://vitejs.dev/) | Builds `src/` to `dist/`, which Tauri embeds into the app |
+| Backend | [Rust](https://www.rust-lang.org/) (`src-tauri/`) | Process management for yt-dlp/ffmpeg, progress-event parsing, file dialogs, window control — see [Architecture](#architecture) |
+| Downloading | [yt-dlp](https://github.com/yt-dlp/yt-dlp) + [ffmpeg](https://ffmpeg.org/) | Do the actual fetching, downloading, and format conversion; bundled into the installer (see [Bundled dependencies](#bundled-dependencies)) |
 
-Requires **Python 3.9+**.
+## Requirements
 
-## Installation
-
-### 1. Python dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-**Linux only:** Tk isn't bundled with pip — install it via your package manager first, e.g. `sudo apt install python3-tk` (Debian/Ubuntu), `sudo dnf install python3-tkinter` (Fedora), or `sudo pacman -S tk` (Arch). Windows and macOS python.org installers already include Tk.
-
-### 2. ffmpeg (recommended)
-
-ffmpeg is required to merge separate video/audio streams into a single file at 1080p/720p/480p, and to convert to MP3 for the audio-only option. Without it, the app still runs, but falls back to pre-merged formats where the site offers them.
-
-The app looks for ffmpeg in two places, in order:
-
-1. **On your `PATH`** — install it normally for your OS:
-   - **Windows:** `winget install ffmpeg` (or download from [ffmpeg.org](https://ffmpeg.org/download.html) and add the `bin` folder to `PATH`)
-   - **macOS:** `brew install ffmpeg`
-   - **Linux:** `sudo apt install ffmpeg` (Debian/Ubuntu), `sudo dnf install ffmpeg` (Fedora), `sudo pacman -S ffmpeg` (Arch)
-2. **Next to the app** — drop an `ffmpeg` (or `ffmpeg.exe` on Windows) binary directly in the project root, alongside `main.py`. No `PATH` changes needed; the app finds it automatically at startup. This is handy on Windows or for a portable/no-install setup.
-
-Either way works — no extra configuration required. The status bar at the bottom of the app will warn you if no ffmpeg was found.
+- **Node.js 18+** and **Rust** (stable toolchain) to build
+- **yt-dlp** and **ffmpeg** — see [Bundled dependencies](#bundled-dependencies) below. The built installer ships with both, so end users don't need to install anything separately; if either is ever missing, the app can [install it on demand](#dependency-status--auto-install).
 
 ## Run
 
 ```bash
-python main.py
+npm install
+npm start
 ```
 
-On macOS/Linux this may need to be `python3 main.py` instead, depending on how Python is installed.
+`npm start` launches the full desktop app (equivalent to `npm run tauri dev`).
 
-## Usage
+## Building
 
-1. Paste a video URL and click **Fetch** (or press Enter)
-2. Once the title and thumbnail load, pick a **quality** and, optionally, change the **save-to folder**
-3. Click **Download** — the view scrolls down automatically to show progress
-4. **Cancel** at any time, or let it finish; you'll be offered a shortcut to open the containing folder
+```bash
+./scripts/fetch-binaries.ps1   # once, to pull the sidecar binaries (see below)
+npm run tauri build
+```
 
-The window is frameless by design — drag the titlebar to move it, and use the `—` / `✕` buttons on the top right to minimize or close. It launches centered on screen with a short fade-in, and fades out on close.
+Produces platform installers (MSI/NSIS on Windows, DMG on macOS, AppImage/deb on Linux) in `src-tauri/target/release/bundle/`.
 
-## Project layout
+## Bundled dependencies
+
+yt-dlp and ffmpeg are bundled straight into the app via Tauri's [sidecar mechanism](https://tauri.app/develop/sidecar/) (`bundle.externalBin` in `tauri.conf.json`) rather than requiring a separate install — the installer includes both, and the app works out of the box.
+
+- `scripts/fetch-binaries.ps1` downloads the official yt-dlp release binary into `src-tauri/binaries/` (gitignored — each machine fetches its own copy rather than committing ~250MB of binaries to source control) and checks for an ffmpeg binary in the same place, printing where to get one if it's missing (ffmpeg has no single official direct-download URL to automate).
+- Binaries must be named `<name>-<target-triple>[.exe]`, e.g. `yt-dlp-x86_64-pc-windows-msvc.exe`; run `rustc -vV` to find your triple for other platforms. Tauri strips the triple and copies the binary next to the installed app at build time.
+- At runtime, `find_binary()` in `src-tauri/src/downloader.rs` looks for `yt-dlp`/`ffmpeg` next to the running executable first (where the bundled sidecars land), then falls back to `PATH`. If a binary is still missing — a corrupted install, or a platform that hasn't had its binaries added to `src-tauri/binaries/` yet — the status dot below turns red/yellow and offers a one-click install instead of failing silently.
+
+## Dependency status & auto-install
+
+<img src="screenshots/dependencies.png" width="420" alt="Dependencies panel showing yt-dlp and ffmpeg both installed">
+
+A status dot in the titlebar (left of minimize/close) reflects whether yt-dlp and ffmpeg were actually found at startup:
+
+- **Green** — both found, everything works
+- **Yellow** — one found, one missing (fetching/downloading still works, but quality merges or MP3 conversion may not, depending on which is missing)
+- **Red** — neither found; fetching and downloading are disabled until yt-dlp is installed
+
+Clicking the dot opens a panel listing each dependency's status. For anything missing, an **Install** button downloads and installs it directly — no browser, no manual file placement:
+
+- **yt-dlp**: downloads the platform's official standalone binary directly (`yt-dlp.exe` / `yt-dlp_macos` / `yt-dlp_linux` from the [yt-dlp releases](https://github.com/yt-dlp/yt-dlp/releases)).
+- **ffmpeg**: downloads a static build and extracts just the `ffmpeg` binary — a zip from [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds) on Windows/Linux (Linux via `tar -xJf`, since that's a standard system utility rather than another dependency), or from [evermeet.cx](https://evermeet.cx/ffmpeg/) on macOS.
+
+Both install into the same directory `find_binary()` already checks first (next to the running executable), and progress streams back to the panel live via an `install-progress` event, the same pattern the download progress bar uses. This logic lives in `src-tauri/src/installer.rs`, separate from the download logic in `downloader.rs`.
+
+This is a fallback path, not the primary flow — real end users get green immediately because the binaries are bundled (see [Bundled dependencies](#bundled-dependencies) above). It matters most for platforms without bundled binaries yet, or a corrupted install.
+
+## Architecture
 
 ```
-main.py                   entry point
-libretube_dl/
-  app.py                  UI (customtkinter): titlebar, fade animation, scrollable layout
-  downloader.py           yt-dlp wrapper: metadata + threaded download with progress/cancel,
-                          cross-platform ffmpeg discovery (PATH or bundled next to the app)
-screenshots/              images used in this README
+src/                        frontend (TypeScript, no framework)
+  main.ts                   UI logic: fetch/download flow, event listeners, fade in/out
+  styles.css                Tailwind directives + custom scrollbar/drag-region CSS
+index.html                  markup: titlebar, URL bar, preview card, quality picker, progress
+
+src-tauri/
+  src/
+    lib.rs                  Tauri app setup, command registration
+    downloader.rs           yt-dlp/ffmpeg discovery, fetch_info, start_download,
+                             cancel_download (process-group kill), pick_folder, reveal_in_folder,
+                             quit_app
+    installer.rs            install_dependency: downloads + installs yt-dlp/ffmpeg on demand
+  tauri.conf.json            frameless window, size, centered on launch
+  capabilities/default.json  permission grants (dialog, opener, window controls)
+  binaries/                 sidecar binaries for bundling (gitignored, see fetch-binaries.ps1)
 ```
+
+**How progress reporting works:** the Rust backend spawns `yt-dlp` with a custom `--progress-template` that prints a machine-parseable line per progress tick (`LTDL_PROGRESS|downloaded|total|...`) and a `--print after_move:...` line with the final file path once postprocessing finishes. A background thread reads `yt-dlp`'s stdout line-by-line, parses these, and emits them as Tauri events (`download-progress`, `download-status`) that the frontend listens for. Cancellation kills the whole process group (via the [`command-group`](https://docs.rs/command-group) crate), not just the immediate `yt-dlp` process, so a spawned `ffmpeg` merge/convert step is also stopped.
+
+**Why closing calls a Rust command instead of `window.close()`:** on Windows, a frameless window (`decorations: false`) calling the JS `Window.close()` API was found to leave the process stuck — the window visually clears and stops responding, but never actually exits. `fadeOutAndClose()` in `main.ts` instead invokes the `quit_app` command, which kills any in-progress download's process group and calls `AppHandle::exit()` directly from Rust, which reliably terminates the app.
+
+## Notes on the Tailwind v2 setup
+
+This project intentionally pins **Tailwind CSS v2**, which predates the always-on JIT engine and arbitrary-value bracket syntax (`h-[42px]`) that shipped in v3. Exact pixel values the design needs (titlebar height, border radii, etc.) are instead declared as named entries in `tailwind.config.cjs`'s `theme.extend`. Color-opacity utilities similarly use v2's two-class form (`bg-accent bg-opacity-40`) rather than v3's slash syntax (`bg-accent/40`), and the `disabled:` variant — default in v3+ — is explicitly enabled per-utility under `variants.extend`, since v2 requires opting in.

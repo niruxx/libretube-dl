@@ -1,13 +1,34 @@
-# Bundled ffmpeg binaries (platform-specific, large — install locally instead)
+# Bundled ffmpeg/yt-dlp binaries (platform-specific, large — fetched by scripts/fetch-binaries, not committed)
 /ffmpeg
 /ffmpeg.exe
 /ffprobe
 /ffprobe.exe
+/yt-dlp
+/yt-dlp.exe
 /bin/
+/src-tauri/binaries/
 
-# Python
-__pycache__/
-*.pyc
-.venv/
-venv/
-*.egg-info/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

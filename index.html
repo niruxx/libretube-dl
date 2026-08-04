@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LibreTube Downloader</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body class="h-screen w-screen">
+    <div id="app" class="flex h-screen w-screen flex-col bg-background text-white">
+      <!-- Titlebar -->
+      <div
+        data-tauri-drag-region
+        class="flex h-42 shrink-0 items-center bg-titlebar select-none"
+      >
+        <div data-tauri-drag-region class="flex flex-1 items-center gap-2 pl-3.5">
+          <span
+            class="flex h-6 w-6 items-center justify-center rounded-7 bg-accent text-xs font-bold text-white"
+            >&#8595;</span
+          >
+          <span data-tauri-drag-region class="text-xs font-bold text-white"
+            >LibreTube Downloader</span
+          >
+        </div>
+        <div class="relative">
+          <button
+            id="dep-status-dot"
+            class="no-drag flex h-42 w-10 items-center justify-center hover:bg-button-hover"
+            aria-label="Dependency status"
+            title="Checking dependencies..."
+          >
+            <span id="dep-status-indicator" class="h-2.5 w-2.5 rounded-full bg-muted"></span>
+          </button>
+          <div
+            id="dep-panel"
+            class="absolute right-2 top-full z-20 hidden w-72 rounded-xl bg-surface p-3 text-xs shadow-lg"
+          ></div>
+        </div>
+        <button
+          id="btn-minimize"
+          class="no-drag flex h-42 w-38 items-center justify-center text-white hover:bg-button-hover"
+          aria-label="Minimize"
+        >
+          &#8212;
+        </button>
+        <button
+          id="btn-close"
+          class="no-drag flex h-42 w-38 items-center justify-center text-white hover:bg-danger"
+          aria-label="Close"
+        >
+          &#10005;
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="scroll-area flex-1 overflow-y-auto">
+        <div class="mx-auto flex max-w-content flex-col gap-0 px-6 py-6">
+          <!-- URL bar -->
+          <div class="flex h-12 items-center rounded-22 bg-surface pl-4 pr-1.5">
+            <input
+              id="url-input"
+              type="text"
+              placeholder="Paste a video URL..."
+              class="h-full flex-1 bg-transparent text-sm text-white placeholder-muted placeholder-opacity-60 outline-none"
+            />
+            <button
+              id="btn-fetch"
+              class="ml-1 h-38 shrink-0 rounded-19 bg-accent px-5 text-sm font-bold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Fetch
+            </button>
+          </div>
+
+          <!-- Preview card -->
+          <div class="mt-5 rounded-2xl bg-surface p-3.5">
+            <div
+              id="preview-thumb-wrap"
+              class="flex h-thumb items-center justify-center overflow-hidden rounded-2xl bg-black bg-opacity-20 text-sm text-muted"
+            >
+              <span id="preview-placeholder">Video preview will appear here</span>
+              <img id="preview-thumb" class="hidden max-h-full max-w-full rounded-2xl object-contain" alt="" />
+            </div>
+            <div class="px-1 pt-3">
+              <p id="preview-title" class="text-15 font-bold leading-snug text-white"></p>
+              <p id="preview-meta" class="mt-1 text-xs text-muted"></p>
+            </div>
+          </div>
+
+          <!-- Quality -->
+          <p class="mb-1.5 mt-6 text-xs font-bold text-muted">Quality</p>
+          <div
+            id="quality-picker"
+            class="flex overflow-hidden rounded-xl bg-surface p-1 text-xs"
+          >
+            <button data-quality="Best available" class="quality-btn flex-1 rounded-lg px-3 py-2 font-medium text-white transition-colors">
+              Best available
+            </button>
+            <button data-quality="1080p" class="quality-btn flex-1 rounded-lg px-3 py-2 font-medium text-white transition-colors">
+              1080p
+            </button>
+            <button data-quality="720p" class="quality-btn flex-1 rounded-lg px-3 py-2 font-medium text-white transition-colors">
+              720p
+            </button>
+            <button data-quality="480p" class="quality-btn flex-1 rounded-lg px-3 py-2 font-medium text-white transition-colors">
+              480p
+            </button>
+            <button data-quality="Audio only (MP3)" class="quality-btn flex-1 rounded-lg px-3 py-2 font-medium text-white transition-colors">
+              Audio only (MP3)
+            </button>
+          </div>
+
+          <!-- Save to -->
+          <p class="mb-1.5 mt-6 text-xs font-bold text-muted">Save to</p>
+          <div class="flex items-center gap-2">
+            <p id="folder-path" class="flex-1 truncate text-xs text-white"></p>
+            <button
+              id="btn-change-folder"
+              class="shrink-0 rounded-full border border-muted border-opacity-40 px-3.5 py-1.5 text-11 text-white hover:border-white"
+            >
+              Change
+            </button>
+          </div>
+
+          <!-- Download -->
+          <button
+            id="btn-download"
+            disabled
+            class="mt-7 h-46 rounded-23 bg-accent bg-opacity-100 text-sm font-bold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-opacity-40 disabled:text-muted disabled:text-opacity-60"
+          >
+            Download
+          </button>
+
+          <!-- Progress -->
+          <div class="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface">
+            <div
+              id="progress-fill"
+              class="h-full w-0 rounded-full bg-accent transition-width duration-150"
+            ></div>
+          </div>
+          <div class="mt-2 flex items-center justify-between pb-6">
+            <p id="status-text" class="text-xs text-muted">Ready.</p>
+            <button
+              id="btn-cancel"
+              disabled
+              class="text-11 text-warning hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:text-opacity-60 disabled:no-underline"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { initSnowfall } from "./snowfall";
 
 interface VideoInfo {
   title: string;
@@ -47,7 +48,8 @@ const depStatusIndicator = el<HTMLSpanElement>("dep-status-indicator");
 const depPanel = el<HTMLDivElement>("dep-panel");
 const urlInput = el<HTMLInputElement>("url-input");
 const btnFetch = el<HTMLButtonElement>("btn-fetch");
-const previewPlaceholder = el<HTMLSpanElement>("preview-placeholder");
+const previewSection = el<HTMLDivElement>("preview-section");
+const previewFallback = el<HTMLSpanElement>("preview-fallback");
 const previewThumb = el<HTMLImageElement>("preview-thumb");
 const previewTitle = el<HTMLParagraphElement>("preview-title");
 const previewMeta = el<HTMLParagraphElement>("preview-meta");
@@ -265,6 +267,8 @@ async function fadeOutAndClose() {
 }
 
 async function init() {
+  initSnowfall("bg-snow");
+
   btnMinimize.addEventListener("click", () => appWindow.minimize());
   btnClose.addEventListener("click", fadeOutAndClose);
   await appWindow.onCloseRequested(async (event) => {
@@ -375,22 +379,25 @@ function onFetchSuccess(info: VideoInfo) {
   previewMeta.textContent = `${info.uploader} · ${humanDuration(info.duration)}`;
   setStatus("Ready to download.");
   btnDownload.disabled = false;
+  previewSection.classList.remove("hidden");
   scrollContentTo("top");
 
   previewThumb.classList.add("hidden");
-  previewPlaceholder.classList.remove("hidden");
+  previewFallback.classList.add("hidden");
   if (info.thumbnail) {
     previewThumb.onload = () => {
-      previewPlaceholder.classList.add("hidden");
+      previewFallback.classList.add("hidden");
       previewThumb.classList.remove("hidden");
       previewThumb.classList.add("thumb-fade-in");
     };
     previewThumb.onerror = () => {
       previewThumb.classList.add("hidden");
+      previewFallback.classList.remove("hidden");
     };
     previewThumb.src = info.thumbnail;
   } else {
     previewThumb.removeAttribute("src");
+    previewFallback.classList.remove("hidden");
   }
 }
 

@@ -17,7 +17,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: #050308;
+  background: #08080c;
   color: #ffffff;
   font-family: "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
   overflow: hidden;
@@ -40,10 +40,43 @@ body {
   -webkit-app-region: no-drag;
 }
 
-/* Scrollbar styling to match the app's dark/purple theme */
+/* Soft "aurora" glow blobs behind the content for a bit of modern depth. Fixed to the
+   viewport, blurred heavily, and low-opacity so they read as ambient light, not shapes. */
+.bg-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-glow::before,
+.bg-glow::after {
+  content: "";
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.16;
+}
+
+.bg-glow::before {
+  background: #7c5cff;
+  top: -180px;
+  left: -140px;
+}
+
+.bg-glow::after {
+  background: #d946ef;
+  bottom: -200px;
+  right: -140px;
+}
+
+/* Scrollbar styling to match the app's theme */
 .scroll-area {
   scrollbar-width: thin;
-  scrollbar-color: #151019 transparent;
+  scrollbar-color: #242430 transparent;
 }
 
 .scroll-area::-webkit-scrollbar {
@@ -55,14 +88,14 @@ body {
 }
 
 .scroll-area::-webkit-scrollbar-thumb {
-  background-color: #151019;
+  background-color: #242430;
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .scroll-area::-webkit-scrollbar-thumb:hover {
-  background-color: #261b33;
+  background-color: #33334a;
   background-clip: padding-box;
 }
 

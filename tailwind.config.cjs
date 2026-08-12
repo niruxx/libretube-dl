@@ -5,17 +5,19 @@ module.exports = {
     extend: {
       colors: {
         accent: {
-          DEFAULT: "#a855f7",
-          hover: "#9333ea",
+          DEFAULT: "#7c5cff",
+          hover: "#6b46f0",
         },
-        surface: "#151019",
-        titlebar: "#0b0810",
-        "button-hover": "#261b33",
-        background: "#050308",
-        muted: "#e3e1e8",
-        warning: "#e5a54b",
-        danger: "#e5484d",
-        success: "#22c55e",
+        "accent-2": "#d946ef",
+        surface: "#131319",
+        border: "#242430",
+        titlebar: "#0a0a10",
+        "button-hover": "#1f1f2b",
+        background: "#08080c",
+        muted: "#9999ab",
+        warning: "#f59e0b",
+        danger: "#ef4444",
+        success: "#10b981",
       },
       fontFamily: {
         sans: [
@@ -63,6 +65,9 @@ module.exports = {
       textDecoration: ["disabled"],
       backgroundOpacity: ["disabled"],
       textOpacity: ["disabled"],
+      // `brightness` (a filter utility) only ships with the `responsive` variant by
+      // default in v2; `hover:brightness-*` needs it added explicitly.
+      brightness: ["hover"],
     },
   },
   plugins: [],

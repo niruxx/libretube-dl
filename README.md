@@ -1,6 +1,6 @@
 <div align="center">
 
-# LibreTube Downloader
+# ClipVault
 
 A clean, modern desktop video downloader. Paste a URL, preview the video, pick a quality, and download.
 
@@ -11,7 +11,7 @@ Built with [Tauri](https://tauri.app/), TypeScript, and Tailwind CSS v2 — powe
 ![Tailwind](https://img.shields.io/badge/Tailwind-v2-38BDF8?logo=tailwindcss&logoColor=white)
 ![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-a855f7)
 
-<img src="screenshots/preview.png" width="620" alt="LibreTube Downloader showing a fetched video ready to download">
+<img src="screenshots/preview.png" width="620" alt="ClipVault showing a fetched video ready to download">
 
 </div>
 
@@ -56,19 +56,19 @@ Instagram and Facebook may require a login for private or age-gated content — 
 
 ## How to install (Linux)
 
-Tagged releases are built automatically by [`.github/workflows/release.yml`](.github/workflows/release.yml) and published as `.deb`, `.rpm`, and `.AppImage` files on the [Releases page](https://github.com/niruxx/libretube-dl/releases). Filenames follow Tauri's default pattern (`LibreTube Downloader_<version>_amd64.<ext>`) and contain a space, so quote them or tab-complete rather than typing them out.
+Tagged releases are built automatically by [`.github/workflows/release.yml`](.github/workflows/release.yml) and published as `.deb`, `.rpm`, and `.AppImage` files on the [Releases page](https://github.com/niruxx/ClipVault/releases). Filenames follow Tauri's default pattern (`ClipVault_<version>_amd64.<ext>`) and contain a space, so quote them or tab-complete rather than typing them out.
 
 ### Debian / Ubuntu (.deb)
 
 ```bash
-sudo dpkg -i "LibreTube Downloader_0.1.0_amd64.deb"
+sudo dpkg -i "ClipVault_0.1.0_amd64.deb"
 sudo apt-get install -f   # pulls in any missing dependencies
 ```
 
 ### Fedora (.rpm)
 
 ```bash
-sudo dnf install "./LibreTube Downloader-0.1.0-1.x86_64.rpm"
+sudo dnf install "./ClipVault-0.1.0-1.x86_64.rpm"
 ```
 
 ### Arch Linux (PKGBUILD)
@@ -76,20 +76,20 @@ sudo dnf install "./LibreTube Downloader-0.1.0-1.x86_64.rpm"
 A `PKGBUILD` is provided in [`packaging/arch/`](packaging/arch/PKGBUILD). It builds the app from source and packages the resulting binary, icons, and a `.desktop` entry:
 
 ```bash
-git clone https://github.com/niruxx/libretube-dl.git
-cd libretube-dl/packaging/arch
+git clone https://github.com/niruxx/ClipVault.git
+cd ClipVault/packaging/arch
 makepkg -si
 ```
 
-This installs a `libretube-downloader` binary plus a desktop entry, launchable from your app menu as "LibreTube Downloader".
+This installs a `clipvault` binary plus a desktop entry, launchable from your app menu as "ClipVault".
 
 ### AppImage (any distro)
 
 No installation needed — download, make it executable, and run:
 
 ```bash
-chmod +x "LibreTube Downloader_0.1.0_amd64.AppImage"
-./"LibreTube Downloader_0.1.0_amd64.AppImage"
+chmod +x "ClipVault_0.1.0_amd64.AppImage"
+./"ClipVault_0.1.0_amd64.AppImage"
 ```
 
 For menu/icon integration, open it once with [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) (if installed) or move it into `~/Applications`.

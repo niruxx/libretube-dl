@@ -132,7 +132,7 @@ fn install_ffmpeg(app: &AppHandle, dir: &Path) -> Result<(), String> {
     let tmp_dir = std::env::temp_dir();
 
     if cfg!(target_os = "windows") {
-        let archive = tmp_dir.join("libretube_ffmpeg_download.zip");
+        let archive = tmp_dir.join("clipvault_ffmpeg_download.zip");
         download_with_progress(
             app,
             "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
@@ -143,20 +143,20 @@ fn install_ffmpeg(app: &AppHandle, dir: &Path) -> Result<(), String> {
         let _ = std::fs::remove_file(&archive);
         result
     } else if cfg!(target_os = "macos") {
-        let archive = tmp_dir.join("libretube_ffmpeg_download.zip");
+        let archive = tmp_dir.join("clipvault_ffmpeg_download.zip");
         download_with_progress(app, "https://evermeet.cx/ffmpeg/getrelease/zip", &archive, "ffmpeg")?;
         let result = extract_from_zip(&archive, "ffmpeg", &dest).map(|_| make_executable(&dest));
         let _ = std::fs::remove_file(&archive);
         result?
     } else {
-        let archive = tmp_dir.join("libretube_ffmpeg_download.tar.xz");
+        let archive = tmp_dir.join("clipvault_ffmpeg_download.tar.xz");
         download_with_progress(
             app,
             "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz",
             &archive,
             "ffmpeg",
         )?;
-        let extract_dir = tmp_dir.join("libretube_ffmpeg_extract");
+        let extract_dir = tmp_dir.join("clipvault_ffmpeg_extract");
         let _ = std::fs::remove_dir_all(&extract_dir);
         std::fs::create_dir_all(&extract_dir).map_err(|e| e.to_string())?;
         let status = std::process::Command::new("tar")

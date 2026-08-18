@@ -36,14 +36,23 @@ Built with [Tauri](https://tauri.app/), TypeScript, and Tailwind CSS v2 — powe
 
 ## Features
 
-- Paste a URL and fetch title, uploader, duration, and thumbnail before downloading
-- Quality presets: Best available, 1080p, 720p, 480p, or Audio only (MP3)
-- Custom download folder picker
-- Live progress with speed and ETA, and a cancel button mid-download
-- Frameless window with a custom titlebar and a smooth fade in on launch / fade out on close
+- **Queue multiple links**: paste a link, press Enter, paste the next one — each is added to a queue and fetched in the background. Press Download once to work through the whole queue back to back, one item shows live progress at a time while the rest wait their turn.
+- Handles both video and image posts — the queue shows "Image" in place of a duration for image-only links
+- Quality presets: Best available, 1080p, 720p, 480p, or Audio only (MP3), applied to the whole queue
+- Custom download folder picker, with a Settings page (gear icon in the titlebar) to set a default download location that's remembered across launches
+- Live progress with speed and ETA; Cancel stops the item currently downloading and moves on to the next one in the queue
+- Frameless window with a custom titlebar, light/dark theme (follows the OS by default, toggle in the titlebar), and a smooth fade in on launch / fade out on close
 - Cross-platform: Windows, macOS, Linux
 - yt-dlp and ffmpeg ship bundled in the installer — nothing to install separately
 - A live dependency-status dot in the titlebar (green/yellow/red) with one-click install if something's missing — see [Dependency status & auto-install](#dependency-status--auto-install)
+
+### Supported sites
+
+Downloading is powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), which supports YouTube and hundreds of other sites out of the box — including, per explicit request, **Reddit** (`v.redd.it` videos), **Redgifs**, **Facebook**, and **Instagram**, each via yt-dlp's dedicated extractor for that site.
+
+**Threads** (threads.net) has no dedicated yt-dlp extractor as of the bundled version (`2026.07.04`) — links to it fall back to yt-dlp's generic extractor, which scrapes standard Open Graph video/image tags from the page. This works for many public posts but isn't guaranteed the way the sites above are, since it depends on Threads continuing to render those tags server-side.
+
+Instagram and Facebook may require a login for private or age-gated content — a plain yt-dlp limitation, not specific to this app.
 
 ## How to install (Linux)
 
@@ -161,9 +170,12 @@ This is a fallback path, not the primary flow — real end users get green immed
 
 ```
 src/                        frontend (TypeScript, no framework)
-  main.ts                   UI logic: fetch/download flow, event listeners, fade in/out
-  styles.css                Tailwind directives + custom scrollbar/drag-region CSS
-index.html                  markup: titlebar, URL bar, preview card, quality picker, progress
+  main.ts                   UI logic: queue state + sequential batch download, dependency
+                             install flow, theme toggle, event listeners, fade in/out
+  ripple.ts                 Material ripple touch-feedback effect for buttons
+  styles.css                Tailwind directives, light/dark theme CSS variables, ripple/
+                             spinner keyframes, custom scrollbar/drag-region CSS
+index.html                  markup: titlebar, URL bar, queue list, quality picker, progress
 
 src-tauri/
   src/

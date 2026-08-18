@@ -9,28 +9,33 @@
   </head>
 
   <body class="h-screen w-screen">
-    <div id="app" class="relative flex h-screen w-screen flex-col overflow-hidden bg-background text-white">
-      <div class="bg-glow"></div>
-      <canvas id="bg-snow" class="pointer-events-none fixed inset-0 z-0"></canvas>
-
-      <!-- Titlebar -->
+    <div id="app" class="relative flex h-screen w-screen flex-col overflow-hidden bg-background text-ink">
+      <!-- Top app bar -->
       <div
         data-tauri-drag-region
-        class="relative z-10 flex h-42 shrink-0 items-center border-b border-border bg-titlebar select-none"
+        class="relative z-20 flex h-56 shrink-0 items-center border-b border-border bg-titlebar select-none"
       >
-        <div data-tauri-drag-region class="flex flex-1 items-center gap-2 pl-3.5">
+        <div data-tauri-drag-region class="flex flex-1 items-center gap-2.5 pl-4">
           <span
-            class="flex h-6 w-6 items-center justify-center rounded-7 bg-gradient-to-br from-accent to-accent-2 text-xs font-bold text-white"
+            class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white"
             >&#8595;</span
           >
-          <span data-tauri-drag-region class="text-xs font-bold text-white"
+          <span data-tauri-drag-region class="text-sm font-medium text-ink"
             >LibreTube Downloader</span
           >
         </div>
+        <button
+          id="theme-toggle"
+          class="no-drag flex h-56 w-46 items-center justify-center text-muted hover:bg-button-hover"
+          aria-label="Toggle dark mode"
+          title="Toggle dark mode"
+        >
+          <span id="theme-toggle-icon">&#9788;</span>
+        </button>
         <div class="relative">
           <button
             id="dep-status-dot"
-            class="no-drag flex h-42 w-10 items-center justify-center hover:bg-button-hover"
+            class="no-drag flex h-56 w-46 items-center justify-center hover:bg-button-hover"
             aria-label="Dependency status"
             title="Checking dependencies..."
           >
@@ -38,19 +43,27 @@
           </button>
           <div
             id="dep-panel"
-            class="absolute right-2 top-full z-20 hidden w-72 rounded-2xl border border-border bg-surface p-3 text-xs shadow-lg"
+            class="absolute right-2 top-full z-20 hidden w-72 rounded-2xl border border-border bg-surface p-3 text-xs shadow-2"
           ></div>
         </div>
         <button
+          id="btn-settings"
+          class="no-drag flex h-56 w-46 items-center justify-center text-muted hover:bg-button-hover"
+          aria-label="Settings"
+          title="Settings"
+        >
+          &#9881;
+        </button>
+        <button
           id="btn-minimize"
-          class="no-drag flex h-42 w-38 items-center justify-center text-white hover:bg-button-hover"
+          class="no-drag flex h-56 w-46 items-center justify-center text-muted hover:bg-button-hover"
           aria-label="Minimize"
         >
           &#8212;
         </button>
         <button
           id="btn-close"
-          class="no-drag flex h-42 w-38 items-center justify-center text-white hover:bg-danger"
+          class="no-drag flex h-56 w-46 items-center justify-center text-muted hover:bg-danger-container hover:text-danger"
           aria-label="Close"
         >
           &#10005;
@@ -59,83 +72,87 @@
 
       <!-- Content -->
       <div class="scroll-area relative z-10 flex-1 overflow-y-auto">
-        <div class="mx-auto flex max-w-content flex-col gap-5 px-6 py-6">
-          <!-- Source: URL + preview -->
-          <div class="rounded-3xl border border-border bg-surface bg-opacity-80 p-4 backdrop-filter backdrop-blur-xl">
-            <div class="flex h-12 items-center gap-1 rounded-2xl bg-background pl-4 pr-1.5">
+        <div id="main-view" class="mx-auto max-w-content flex-col gap-4 px-6 py-6">
+          <!-- Source: URL + queue -->
+          <div class="rounded-3xl bg-surface p-4 shadow-1">
+            <div class="flex h-12 items-center gap-1 rounded-full bg-surface-variant pl-4 pr-1.5">
               <input
                 id="url-input"
                 type="text"
-                placeholder="Paste a video URL..."
-                class="h-full flex-1 bg-transparent text-sm text-white placeholder-muted placeholder-opacity-60 outline-none"
+                placeholder="Paste a video or image link, then press Enter..."
+                class="h-full flex-1 bg-transparent text-sm text-ink placeholder-muted outline-none"
               />
               <button
-                id="btn-fetch"
-                class="h-38 shrink-0 rounded-19 bg-gradient-to-r from-accent to-accent-2 px-5 text-sm font-bold text-white filter transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                id="btn-add"
+                class="ripple-host h-38 shrink-0 rounded-full bg-primary px-5 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-surface-variant disabled:text-muted"
               >
-                Fetch
+                Add
               </button>
             </div>
 
-            <div id="preview-section" class="mt-4 hidden">
-              <div
-                id="preview-thumb-wrap"
-                class="relative flex h-thumb items-center justify-center overflow-hidden rounded-2xl bg-black bg-opacity-30 text-sm text-muted"
-              >
-                <span id="preview-fallback" class="hidden">No preview available</span>
-                <img id="preview-thumb" class="hidden max-h-full max-w-full rounded-2xl object-contain" alt="" />
+            <div id="queue-section" class="mt-4 hidden">
+              <div class="mb-2 flex items-center justify-between">
+                <p id="queue-count" class="text-11 font-medium uppercase tracking-wide text-muted">Queue</p>
+                <button
+                  id="btn-clear-queue"
+                  class="ripple-host rounded-full px-2 py-1 text-11 font-medium text-primary hover:bg-primary-container"
+                >
+                  Clear
+                </button>
               </div>
-              <div class="px-1 pt-3">
-                <p id="preview-title" class="text-15 font-bold leading-snug text-white"></p>
-                <p id="preview-meta" class="mt-1 text-xs text-muted"></p>
-              </div>
+              <div id="queue-list" class="flex flex-col gap-2"></div>
             </div>
           </div>
 
           <!-- Options: quality + save location -->
-          <div class="rounded-3xl border border-border bg-surface bg-opacity-80 p-4 backdrop-filter backdrop-blur-xl">
-            <p class="mb-2 text-11 font-bold uppercase tracking-wide text-muted">Quality</p>
+          <div class="rounded-3xl bg-surface p-4 shadow-1">
+            <p class="mb-2 text-11 font-medium uppercase tracking-wide text-muted">Quality</p>
             <div id="quality-picker" class="flex flex-wrap gap-2">
               <button
                 data-quality="Best available"
-                class="quality-btn rounded-full border border-border px-4 py-2 text-xs font-medium text-white transition-colors"
+                class="quality-btn ripple-host inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-medium text-ink transition-colors"
               >
-                Best available
+                <span class="quality-check hidden">&#10003;</span>
+                <span>Best available</span>
               </button>
               <button
                 data-quality="1080p"
-                class="quality-btn rounded-full border border-border px-4 py-2 text-xs font-medium text-white transition-colors"
+                class="quality-btn ripple-host inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-medium text-ink transition-colors"
               >
-                1080p
+                <span class="quality-check hidden">&#10003;</span>
+                <span>1080p</span>
               </button>
               <button
                 data-quality="720p"
-                class="quality-btn rounded-full border border-border px-4 py-2 text-xs font-medium text-white transition-colors"
+                class="quality-btn ripple-host inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-medium text-ink transition-colors"
               >
-                720p
+                <span class="quality-check hidden">&#10003;</span>
+                <span>720p</span>
               </button>
               <button
                 data-quality="480p"
-                class="quality-btn rounded-full border border-border px-4 py-2 text-xs font-medium text-white transition-colors"
+                class="quality-btn ripple-host inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-medium text-ink transition-colors"
               >
-                480p
+                <span class="quality-check hidden">&#10003;</span>
+                <span>480p</span>
               </button>
               <button
                 data-quality="Audio only (MP3)"
-                class="quality-btn rounded-full border border-border px-4 py-2 text-xs font-medium text-white transition-colors"
+                class="quality-btn ripple-host inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-medium text-ink transition-colors"
               >
-                Audio only (MP3)
+                <span class="quality-check hidden">&#10003;</span>
+                <span>Audio only (MP3)</span>
               </button>
             </div>
 
-            <div class="my-4 h-px bg-border"></div>
+            <div class="my-4 h-px bg-outline"></div>
 
-            <p class="mb-2 text-11 font-bold uppercase tracking-wide text-muted">Save to</p>
+            <p class="mb-2 text-11 font-medium uppercase tracking-wide text-muted">Save to</p>
             <div class="flex items-center gap-2">
-              <p id="folder-path" class="flex-1 truncate rounded-xl bg-background px-3 py-2.5 text-xs text-white"></p>
+              <p id="folder-path" class="flex-1 truncate rounded-xl bg-surface-variant px-3 py-2.5 text-xs text-ink"></p>
               <button
                 id="btn-change-folder"
-                class="shrink-0 rounded-full border border-border px-3.5 py-2.5 text-11 text-white hover:border-white"
+                class="ripple-host shrink-0 rounded-full px-3.5 py-2.5 text-11 font-medium text-primary hover:bg-primary-container"
               >
                 Change
               </button>
@@ -147,15 +164,16 @@
             <button
               id="btn-download"
               disabled
-              class="h-46 w-full rounded-23 bg-gradient-to-r from-accent to-accent-2 text-sm font-bold text-white shadow-lg filter transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              class="ripple-host flex h-46 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-white shadow-3 transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-surface-variant disabled:text-muted disabled:shadow-none"
             >
-              Download
+              <span>&#8595;</span>
+              <span id="btn-download-label">Download</span>
             </button>
 
-            <div class="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface">
+            <div class="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-variant">
               <div
                 id="progress-fill"
-                class="h-full w-0 rounded-full bg-gradient-to-r from-accent to-accent-2 transition-width duration-150"
+                class="h-full w-0 rounded-full bg-primary transition-width duration-150"
               ></div>
             </div>
             <div class="mt-2 flex items-center justify-between">
@@ -163,14 +181,55 @@
               <button
                 id="btn-cancel"
                 disabled
-                class="text-11 text-warning hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:text-opacity-60 disabled:no-underline"
+                class="ripple-host text-11 font-medium text-danger hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
               >
                 Cancel
               </button>
             </div>
           </div>
 
-          <p class="pb-2 text-center text-11 text-muted text-opacity-60">- niruxxdaboi -</p>
+          <p class="pb-2 text-center text-11 text-muted">- niruxxdaboi -</p>
+        </div>
+
+        <!-- Settings -->
+        <div id="settings-view" class="mx-auto max-w-content flex-col gap-4 px-6 py-6 hidden">
+          <div class="flex items-center gap-1">
+            <button
+              id="btn-settings-back"
+              class="ripple-host flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink hover:bg-button-hover"
+              aria-label="Back"
+              title="Back"
+            >
+              &#8592;
+            </button>
+            <p class="text-base font-medium text-ink">Settings</p>
+          </div>
+
+          <div class="rounded-3xl bg-surface p-4 shadow-1">
+            <p class="mb-2 text-11 font-medium uppercase tracking-wide text-muted">Downloads</p>
+            <p class="mb-1 text-sm font-medium text-ink">Default download location</p>
+            <p class="mb-3 text-11 text-muted">
+              Downloads are saved here from now on, until you change it again.
+            </p>
+            <div class="flex items-center gap-2">
+              <p
+                id="settings-folder-path"
+                class="flex-1 truncate rounded-xl bg-surface-variant px-3 py-2.5 text-xs text-ink"
+              ></p>
+              <button
+                id="btn-settings-change-folder"
+                class="ripple-host shrink-0 rounded-full px-3.5 py-2.5 text-11 font-medium text-primary hover:bg-primary-container"
+              >
+                Change
+              </button>
+            </div>
+            <button
+              id="btn-settings-reset-folder"
+              class="ripple-host mt-2 rounded-full px-2 py-1 text-11 font-medium text-primary hover:bg-primary-container"
+            >
+              Reset to system default
+            </button>
+          </div>
         </div>
       </div>
     </div>

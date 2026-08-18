@@ -2,6 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme tokens as CSS variables, referenced directly from tailwind.config.cjs
+   (e.g. `bg-primary` compiles to `background-color: var(--color-primary)`). Toggling
+   the `dark` class on <html> swaps every color app-wide with no per-utility
+   `dark:` variants needed — sidesteps Tailwind v2's inconsistent default variant
+   support (see the disabled:/hover:brightness notes below). */
+:root {
+  --color-primary: #1a73e8;
+  --color-primary-hover: #1765cc;
+  --color-primary-container: #d3e3fd;
+  --color-on-primary-container: #0842a0;
+  --color-surface: #ffffff;
+  --color-surface-variant: #f1f3f4;
+  --color-background: #f8f9fa;
+  --color-border: #dadce0;
+  --color-outline: #e8eaed;
+  --color-titlebar: #ffffff;
+  --color-button-hover: #f1f3f4;
+  --color-ink: #202124;
+  --color-muted: #5f6368;
+  --color-warning: #f9ab00;
+  --color-warning-container: #fef7e0;
+  --color-danger: #d93025;
+  --color-danger-container: #fce8e6;
+  --color-success: #1e8e3e;
+  --color-success-container: #e6f4ea;
+  --color-scroll-hover: #bdc1c6;
+  --shadow-tint: 60, 64, 67;
+}
+
+html.dark {
+  --color-primary: #669df6;
+  --color-primary-hover: #4285f4;
+  --color-primary-container: #274a77;
+  --color-on-primary-container: #c2e0ff;
+  --color-surface: #292a2d;
+  --color-surface-variant: #35363a;
+  --color-background: #202124;
+  --color-border: #3c4043;
+  --color-outline: #5f6368;
+  --color-titlebar: #292a2d;
+  --color-button-hover: #35363a;
+  --color-ink: #e8eaed;
+  --color-muted: #9aa0a6;
+  --color-warning: #fdd663;
+  --color-warning-container: #4d3800;
+  --color-danger: #f2b8b5;
+  --color-danger-container: #442726;
+  --color-success: #81c995;
+  --color-success-container: #1e3a28;
+  --color-scroll-hover: #5f6368;
+  --shadow-tint: 0, 0, 0;
+}
+
 * {
   -webkit-user-select: none;
   user-select: none;
@@ -17,9 +70,9 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: #08080c;
-  color: #ffffff;
-  font-family: "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
+  background: var(--color-background);
+  color: var(--color-ink);
+  font-family: "Google Sans", Roboto, "Segoe UI", system-ui, -apple-system, sans-serif;
   overflow: hidden;
 }
 
@@ -32,6 +85,16 @@ body {
   opacity: 1;
 }
 
+/* Smooths every incidental background/text/border color change app-wide — most notably
+   the light/dark theme toggle, since that swaps CSS variables that many elements read
+   from without themselves declaring a transition. :where() keeps this rule's specificity
+   at zero, so it never overrides an element's own more specific Tailwind transition
+   utility (transition-colors, transition-width, etc.); it only fills in for elements that
+   don't have one. */
+:where(html, body, #app, #app *) {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+
 [data-tauri-drag-region] {
   -webkit-app-region: drag;
 }
@@ -40,43 +103,10 @@ body {
   -webkit-app-region: no-drag;
 }
 
-/* Soft "aurora" glow blobs behind the content for a bit of modern depth. Fixed to the
-   viewport, blurred heavily, and low-opacity so they read as ambient light, not shapes. */
-.bg-glow {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.bg-glow::before,
-.bg-glow::after {
-  content: "";
-  position: absolute;
-  width: 480px;
-  height: 480px;
-  border-radius: 9999px;
-  filter: blur(120px);
-  opacity: 0.16;
-}
-
-.bg-glow::before {
-  background: #7c5cff;
-  top: -180px;
-  left: -140px;
-}
-
-.bg-glow::after {
-  background: #d946ef;
-  bottom: -200px;
-  right: -140px;
-}
-
-/* Scrollbar styling to match the app's theme */
+/* Scrollbar styling to match the active theme */
 .scroll-area {
   scrollbar-width: thin;
-  scrollbar-color: #242430 transparent;
+  scrollbar-color: var(--color-border) transparent;
 }
 
 .scroll-area::-webkit-scrollbar {
@@ -88,14 +118,14 @@ body {
 }
 
 .scroll-area::-webkit-scrollbar-thumb {
-  background-color: #242430;
+  background-color: var(--color-border);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .scroll-area::-webkit-scrollbar-thumb:hover {
-  background-color: #33334a;
+  background-color: var(--color-scroll-hover);
   background-clip: padding-box;
 }
 
@@ -109,5 +139,84 @@ body {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* Material "ripple" touch feedback: a span injected at the pointerdown coordinates
+   that expands and fades. Host elements need position:relative + overflow:hidden. */
+.ripple-host {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 9999px;
+  transform: scale(0);
+  background: currentColor;
+  opacity: 0.28;
+  pointer-events: none;
+  animation: rippleExpand 500ms ease-out;
+}
+
+@keyframes rippleExpand {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Main-view / Settings-view slide transition. JS toggles these elements' opacity and
+   transform inline (see showView() in main.ts); this just declares what animates. */
+#main-view,
+#settings-view {
+  transition: opacity 160ms ease, transform 160ms ease, background-color 200ms ease, border-color 200ms ease,
+    color 200ms ease;
+}
+
+/* Dependency panel: a quick scale + fade from its anchor, Material-menu style. JS adds
+   .panel-enter right before removing `hidden`, then removes it a frame later so the
+   transition below actually plays instead of snapping straight to the open state. */
+#dep-panel {
+  transform-origin: top right;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+#dep-panel.panel-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Queue rows replay this on every render (the list is fully regenerated on each status
+   change), so it stays short and subtle rather than a heavier one-shot "new item" effect. */
+.queue-row-enter {
+  animation: queueRowEnter 200ms ease;
+}
+
+@keyframes queueRowEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Small circular progress indicator for queue rows that are fetching info or downloading. */
+.spinner {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 9999px;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
